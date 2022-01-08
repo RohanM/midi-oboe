@@ -1,17 +1,17 @@
-const int pinSense = 0;
-const int pinMux0 = 1;
-const int pinMux1 = 2;
-const int pinMux2 = 3;
-const int pinMux3 = 4;
+const int PIN_SENSE = 0;
+const int PIN_MUX_0 = 1;
+const int PIN_MUX_1 = 2;
+const int PIN_MUX_2 = 3;
+const int PIN_MUX_3 = 4;
 
-const int midiChannel = 1;
-const int keyThreshold = 5000;
+const int MIDI_CHANNEL = 1;
+const int KEY_THRESHOLD = 5000;
 
 void setup() {
-  pinMode(pinMux0, OUTPUT);
-  pinMode(pinMux1, OUTPUT);
-  pinMode(pinMux2, OUTPUT);
-  pinMode(pinMux3, OUTPUT);
+  pinMode(PIN_MUX_0, OUTPUT);
+  pinMode(PIN_MUX_1, OUTPUT);
+  pinMode(PIN_MUX_2, OUTPUT);
+  pinMode(PIN_MUX_3, OUTPUT);
 
   Serial.begin(9600);
 }
@@ -29,7 +29,7 @@ void loop() {
   lastNote = currentNote;
 
   for(int i=0; i<4; i++) {
-    keys[i] = readTouch(i) > keyThreshold;
+    keys[i] = readTouch(i) > KEY_THRESHOLD;
   }
 
   if (keys[1] && keys[2] && keys[3]) {
@@ -43,10 +43,10 @@ void loop() {
   }
 
   if (lastNote != currentNote) {
-    usbMIDI.sendNoteOff(lastNote, 0, midiChannel);
+    usbMIDI.sendNoteOff(lastNote, 0, MIDI_CHANNEL);
 
     if (currentNote > 0) {
-      usbMIDI.sendNoteOn(currentNote, 127, midiChannel);
+      usbMIDI.sendNoteOn(currentNote, 127, MIDI_CHANNEL);
     }
   }
 
@@ -55,11 +55,11 @@ void loop() {
 
 
 int readTouch(int number) {
-  digitalWrite(pinMux0, bitRead(number, 0));
-  digitalWrite(pinMux1, bitRead(number, 1));
-  digitalWrite(pinMux2, bitRead(number, 2));
-  digitalWrite(pinMux3, bitRead(number, 3));
-  uint16_t value = touchRead(pinSense);
+  digitalWrite(PIN_MUX_0, bitRead(number, 0));
+  digitalWrite(PIN_MUX_1, bitRead(number, 1));
+  digitalWrite(PIN_MUX_2, bitRead(number, 2));
+  digitalWrite(PIN_MUX_3, bitRead(number, 3));
+  uint16_t value = touchRead(PIN_SENSE);
 
   return value;
 }
