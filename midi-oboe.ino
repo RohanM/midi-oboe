@@ -1,3 +1,12 @@
+/**
+ * MIDI Oboe
+ * Rohan Mitchell
+ * Based heavily on the Kontinuum Lab Instrument Kit by Jeppe Tofthøj Rasmussen
+ * https://github.com/KontinuumLab/KontinuumLAB_Instrument_Kit
+ *
+ * Licence: GPL v3
+ */
+
 const int PIN_SENSE = 0;
 const int PIN_MUX_0 = 1;
 const int PIN_MUX_1 = 2;
