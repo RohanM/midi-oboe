@@ -13,8 +13,21 @@ const int PIN_MUX_1 = 2;
 const int PIN_MUX_2 = 3;
 const int PIN_MUX_3 = 4;
 
+const int PIN_LIP = 15;
+const int PIN_BREATH = 16;
+const int PIN_TONGUE = 17;
+const int PIN_TONGUE_LED = 14;
+
+const int BREATH_MIN = 180;
+const int BREATH_MAX = 838;
+
+const int MIDI_MIN = 0;
+const int MIDI_MAX = 127;
+
 const int MIDI_CHANNEL = 1;
+
 const int KEY_THRESHOLD = 5000;
+
 
 void setup() {
   pinMode(PIN_MUX_0, OUTPUT);
@@ -22,22 +35,42 @@ void setup() {
   pinMode(PIN_MUX_2, OUTPUT);
   pinMode(PIN_MUX_3, OUTPUT);
 
+  pinMode(PIN_TONGUE_LED, OUTPUT);
+
   Serial.begin(9600);
 }
 
 int currentNote, lastNote;
+int breath, lastBreath, lip, tongue;
+
 bool keys[] = {false, false, false, false};
 
 void loop() {
-  //Serial.println("---");
-  //Serial.println(readTouch(0));
-  //Serial.println(readTouch(1));
-  //Serial.println(readTouch(2));
-  //Serial.println(readTouch(3));
+  lastBreath = breath;
+  breath = analogRead(PIN_BREATH);
+  breath = map(breath, BREATH_MIN, BREATH_MAX, MIDI_MIN, MIDI_MAX);
+  breath = constrain(breath, MIDI_MIN, MIDI_MAX);
+
+  lip = touchRead(PIN_LIP); // 1250 - 1600
+  tongue = analogRead(PIN_TONGUE); // 200 - 450
+
+  if (breath != lastBreath) {
+    usbMIDI.sendAfterTouch(breath, MIDI_CHANNEL);
+
+    // Start and stop the note
+    if (breath == 0) {
+      digitalWrite(PIN_TONGUE_LED, LOW);
+      usbMIDI.sendNoteOff(currentNote, 0, MIDI_CHANNEL);
+
+    } else if(breath != 0 && lastBreath == 0) {
+      digitalWrite(PIN_TONGUE_LED, HIGH);
+      usbMIDI.sendNoteOn(currentNote, 127, MIDI_CHANNEL);
+    }
+  }
 
   lastNote = currentNote;
 
-  for(int i=0; i<4; i++) {
+  for (int i = 0; i < 4; i++) {
     keys[i] = readTouch(i) > KEY_THRESHOLD;
   }
 
@@ -48,15 +81,14 @@ void loop() {
   } else if (keys[1] && !keys[2] && !keys[3]) {
     currentNote = 59; // B
   } else if (!keys[1] && !keys[2] && !keys[3]) {
-    currentNote = 0; // Note off
+    currentNote = 61;
+  } else {
+    currentNote = 63;
   }
 
-  if (lastNote != currentNote) {
+  if (breath > 0 && lastNote != currentNote && currentNote > 0) {
     usbMIDI.sendNoteOff(lastNote, 0, MIDI_CHANNEL);
-
-    if (currentNote > 0) {
-      usbMIDI.sendNoteOn(currentNote, 127, MIDI_CHANNEL);
-    }
+    usbMIDI.sendNoteOn(currentNote, 127, MIDI_CHANNEL);
   }
 
   delay(10);
