@@ -18,6 +18,8 @@ const int PIN_BREATH = 16;
 const int PIN_TONGUE = 17;
 const int PIN_TONGUE_LED = 14;
 
+const int NUM_KEYS = 16;
+
 const int BREATH_MIN = 180;
 const int BREATH_MAX = 838;
 
@@ -38,6 +40,54 @@ const int MIDI_CHANNEL = 1;
 const int KEY_THRESHOLD = 5000;
 
 
+int currentNote, lastNote;
+int breath, lastBreath, lip, lastLip, tongue, lastTongue;
+
+bool keys[] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+
+const int NUM_FINGERINGS = 31;
+const int FINGERING_IGNORE = 2;
+const int FINGERING_NOTE = 16;
+
+// 0 = must not be touched, 1 = must be touched, 2 = don't care
+// 16 entries for the full layout, then the midi note value
+const int fingerings[][17] = {
+  {0,  1, 1, 1, 1,  0, 0, 2, 1,  1, 1, 0, 1,  1, 0, 0, 46}, // Bb
+  {0,  1, 1, 1, 1,  0, 0, 1, 0,  1, 1, 0, 1,  1, 0, 0, 47}, // B
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  1, 0, 0, 48}, // C
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 1, 0, 49}, // C#
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 0, 0, 50}, // D
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 0, 1, 51}, // Eb
+  {0,  1, 1, 1, 1,  0, 1, 0, 0,  1, 1, 0, 1,  0, 0, 0, 51}, // Eb
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 0,  0, 0, 0, 52}, // E
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 0,  0, 0, 0, 53}, // F
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 0, 0, 1,  0, 0, 0, 53}, // F
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 54}, // F#
+  {0,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 55}, // G
+  {0,  1, 1, 1, 1,  1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 56}, // Ab
+  {0,  1, 1, 1, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 57}, // A
+  {0,  1, 1, 1, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 58}, // Bb
+  {0,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 59}, // B
+  {0,  1, 1, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 60}, // C
+
+  {0,  0, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 1, 0, 61}, // C#
+  {0,  0, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 0, 0, 62}, // D
+  {0,  0, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 1,  0, 0, 1, 63}, // Eb
+  {0,  0, 1, 1, 1,  0, 1, 0, 0,  1, 1, 0, 1,  0, 0, 0, 63}, // Eb
+
+  {1,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 0, 0,  0, 0, 0, 64}, // E
+  {1,  1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 0,  0, 0, 0, 65}, // F
+  {1,  1, 1, 1, 1,  0, 0, 0, 0,  1, 0, 0, 1,  0, 0, 0, 65}, // F
+  {1,  1, 1, 1, 1,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 66}, // F#
+  {1,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 67}, // G
+  {1,  1, 1, 1, 1,  1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 68}, // Ab
+  {1,  1, 1, 1, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 69}, // A
+  {1,  1, 1, 1, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 70}, // Bb
+  {1,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 71}, // B
+
+  {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 60} // Fallback C
+};
+
 void setup() {
   pinMode(PIN_MUX_0, OUTPUT);
   pinMode(PIN_MUX_1, OUTPUT);
@@ -48,11 +98,6 @@ void setup() {
 
   Serial.begin(9600);
 }
-
-int currentNote, lastNote;
-int breath, lastBreath, lip, lastLip, tongue, lastTongue;
-
-bool keys[] = {false, false, false, false};
 
 void loop() {
   lastBreath = breath;
@@ -99,20 +144,22 @@ void loop() {
 
   lastNote = currentNote;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_KEYS; i++) {
     keys[i] = readTouch(i) > KEY_THRESHOLD;
   }
 
-  if (keys[1] && keys[2] && keys[3]) {
-    currentNote = 55; // G
-  } else if (keys[1] && keys[2] && !keys[3]) {
-    currentNote = 57; // A
-  } else if (keys[1] && !keys[2] && !keys[3]) {
-    currentNote = 59; // B
-  } else if (!keys[1] && !keys[2] && !keys[3]) {
-    currentNote = 61;
-  } else {
-    currentNote = 63;
+  for (int i = 0; i < NUM_FINGERINGS; i++) {
+    bool found = true;
+    for (int j = 0; j < NUM_KEYS; j++) {
+      if (keys[j] != fingerings[i][j] && fingerings[i][j] != FINGERING_IGNORE) {
+        found = false;
+        break;
+      }
+    }
+    if (found) {
+      currentNote = fingerings[i][FINGERING_NOTE];
+      break;
+    }
   }
 
   if (breath > 0 && lastNote != currentNote && currentNote > 0) {
