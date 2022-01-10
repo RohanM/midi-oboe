@@ -21,8 +21,13 @@ const int PIN_TONGUE_LED = 14;
 const int BREATH_MIN = 180;
 const int BREATH_MAX = 838;
 
+const int LIP_MIN = 1400;
+const int LIP_MAX = 1600;
+
 const int MIDI_MIN = 0;
 const int MIDI_MAX = 127;
+
+const int MOD_WHEEL_CC = 1;
 
 const int MIDI_CHANNEL = 1;
 
@@ -41,7 +46,7 @@ void setup() {
 }
 
 int currentNote, lastNote;
-int breath, lastBreath, lip, tongue;
+int breath, lastBreath, lip, lastLip, tongue;
 
 bool keys[] = {false, false, false, false};
 
@@ -51,7 +56,11 @@ void loop() {
   breath = map(breath, BREATH_MIN, BREATH_MAX, MIDI_MIN, MIDI_MAX);
   breath = constrain(breath, MIDI_MIN, MIDI_MAX);
 
-  lip = touchRead(PIN_LIP); // 1250 - 1600
+  lastLip = lip;
+  lip = touchRead(PIN_LIP);
+  lip = map(lip, LIP_MIN, LIP_MAX, MIDI_MIN, MIDI_MAX);
+  lip = constrain(lip, MIDI_MIN, MIDI_MAX);
+
   tongue = analogRead(PIN_TONGUE); // 200 - 450
 
   if (breath != lastBreath) {
@@ -60,12 +69,17 @@ void loop() {
     // Start and stop the note
     if (breath == 0) {
       digitalWrite(PIN_TONGUE_LED, LOW);
+      usbMIDI.sendControlChange(MOD_WHEEL_CC, 0, MIDI_CHANNEL);
       usbMIDI.sendNoteOff(currentNote, 0, MIDI_CHANNEL);
 
     } else if(breath != 0 && lastBreath == 0) {
       digitalWrite(PIN_TONGUE_LED, HIGH);
       usbMIDI.sendNoteOn(currentNote, 127, MIDI_CHANNEL);
     }
+  }
+
+  if (breath > 0 && lip != lastLip) {
+    usbMIDI.sendControlChange(MOD_WHEEL_CC, lip, MIDI_CHANNEL);
   }
 
   lastNote = currentNote;
