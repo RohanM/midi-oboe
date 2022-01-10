@@ -43,7 +43,7 @@ const int KEY_THRESHOLD = 5000;
 int currentNote, lastNote;
 int breath, lastBreath, lip, lastLip, tongue, lastTongue;
 
-bool keys[] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+bool keys[NUM_KEYS];
 
 const int NUM_FINGERINGS = 32;
 const int FINGERING_IGNORE = 2;
