@@ -45,7 +45,7 @@ int breath, lastBreath, lip, lastLip, tongue, lastTongue;
 
 bool keys[NUM_KEYS];
 
-const int NUM_FINGERINGS = 32;
+const int NUM_FINGERINGS = 34;
 const int FINGERING_IGNORE = 2;
 const int FINGERING_NOTE = 16;
 
@@ -53,7 +53,9 @@ const int FINGERING_NOTE = 16;
 // 16 entries for the full layout, then the midi note value
 const int fingerings[NUM_FINGERINGS][17] = {
   {0,  1, 2, 1, 1,  0, 0, 2, 1,  1, 1, 2, 1,  1, 2, 2,  46}, // Bb
+  {0,  1, 2, 1, 1,  0, 0, 2, 1,  1, 1, 2, 1,  2, 1, 2,  46}, // Bb
   {0,  1, 2, 1, 1,  0, 0, 1, 0,  1, 1, 2, 1,  1, 2, 2,  47}, // B
+  {0,  1, 2, 1, 1,  0, 0, 1, 0,  1, 1, 2, 1,  2, 1, 2,  47}, // B
   {0,  1, 2, 1, 1,  2, 0, 0, 0,  1, 1, 2, 1,  1, 0, 2,  48}, // C
   {0,  1, 2, 1, 1,  2, 2, 2, 2,  1, 1, 2, 1,  2, 1, 2,  49}, // C#
   {0,  1, 2, 1, 1,  2, 0, 2, 2,  1, 1, 2, 1,  2, 2, 0,  50}, // D
